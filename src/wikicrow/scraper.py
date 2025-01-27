@@ -78,13 +78,8 @@ def validate_html(html_content):
     warning_header = soup.find('h2', string="Warning")
     if warning_header:
         return True, "Insufficient scholarly sources found"
-
-    # Check for presence of the info section, indicating valid data
-    info_header = soup.find('h2', string='Info')
-    if info_header:
-        return True, None
-
-    return False, "Missing gene info"
+    
+    return True, None
 
 
 def extract_data(html_content, gene_name):
@@ -136,7 +131,8 @@ def extract_data(html_content, gene_name):
     # Extract Related Genes
     related_genes_header = soup.find('h2', string='Related Genes')
     if related_genes_header:
-        related_genes_div = related_genes_header.find_parent('div').find_next_sibling('div')
+        related_genes_div = related_genes_header.find_parent(
+            'div').find_parent('div').find_next_sibling('div')
         if related_genes_div:
             related_genes = [div.find('p').text for div in related_genes_div.find_all('div', role='button')]
             data['related_genes'] = related_genes
@@ -229,7 +225,7 @@ async def main():
     os.makedirs(html_dir, exist_ok=True)
     os.makedirs(json_dir, exist_ok=True)
 
-    semaphore = Semaphore(8)  # Limit to 4 concurrent workers
+    semaphore = Semaphore(3)  
     tasks = [
         process_gene(
             row['gene_name'].upper(), html_dir, json_dir, geckodriver_path, semaphore
